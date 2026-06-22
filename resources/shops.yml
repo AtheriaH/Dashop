@@ -1,0 +1,13 @@
+---
+categories:
+  blocks:
+    name: "Building Blocks"
+    sub_categories:
+      wood:
+        name: "Wood & Planks"
+        items:
+          "minecraft:oak_planks":
+            name: "Oak Planks"
+            buy_price: 10
+            sell_price: 5
+...
