@@ -5,22 +5,26 @@ declare(strict_types=1);
 namespace dashop\command;
 
 use dashop\Main;
-use dashop\form\ShopForm;
 use pocketmine\command\Command;
 use pocketmine\command\CommandSender;
 use pocketmine\player\Player;
 use pocketmine\utils\TextFormat;
+// This is the crucial line you were missing!
+use dashop\form\ShopForm; 
 
 class ShopCommand extends Command {
 
-    public function __construct(private Main $plugin) {
-        parent::__construct("dashop", "Open the server shop", "/dashop [category]", ["shop"]);
+    private Main $plugin;
+
+    public function __construct(Main $plugin) {
+        parent::__construct("dashop", "Open the server shop", "/dashop", ["shop"]);
         $this->setPermission("dashop.command.shop");
+        $this->plugin = $plugin;
     }
 
     public function execute(CommandSender $sender, string $commandLabel, array $args): bool {
         if (!$sender instanceof Player) {
-            $sender->sendMessage(TextFormat::RED . "This command must be executed in-game.");
+            $sender->sendMessage(TextFormat::RED . "Please run this command in-game.");
             return false;
         }
 
@@ -28,24 +32,19 @@ class ShopCommand extends Command {
             return false;
         }
 
-        // --- WORLD RESTRICTION LOGIC ---
-        // Add the exact folder names of the worlds where you want to block the shop
-        $restrictedWorlds = ["lobby", "hub", "world"];
-        $currentWorld = $sender->getWorld()->getFolderName();
+        $restrictedWorlds = $this->plugin->getConfig()->get("restricted_worlds", []);
 
-        if (in_array($currentWorld, $restrictedWorlds)) {
+        if (in_array($sender->getWorld()->getFolderName(), $restrictedWorlds)) {
             $sender->sendMessage(TextFormat::RED . "You cannot use the shop in this world!");
             return false;
         }
-        // -------------------------------
 
-        // Check if they typed a specific category (e.g., /shop blocks)
+        // If a player types a category like /shop ores
         if (isset($args[0])) {
             $categoryId = strtolower($args[0]);
             $categories = $this->plugin->getShopManager()->getCategories();
 
             if (isset($categories[$categoryId])) {
-                // Instantly open exactly that category!
                 ShopForm::sendItemMenu($sender, $this->plugin, $categoryId);
                 return true;
             } else {
@@ -54,7 +53,7 @@ class ShopCommand extends Command {
             }
         }
 
-        // FIX: Changed sendCategoryMenu to sendMainMenu to match ShopForm.php
+        // Opens the main menu safely!
         ShopForm::sendMainMenu($sender, $this->plugin);
         return true;
     }
